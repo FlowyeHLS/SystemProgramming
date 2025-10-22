@@ -1,5 +1,6 @@
 #include <iostream>
 #include <conio.h>
+#include <windows.h>
 using std::cin;
 using std::cout;
 using std::endl;
@@ -25,9 +26,10 @@ public :
 	}
 	void fill(double fuel)
 	{
-		if (fuel < 0)return;
+		//if (fuel < 0)return;
 		fuel_level += fuel;
 			if (fuel_level > VOLUME)fuel_level = VOLUME;
+			if (fuel_level < 0) fuel_level = 0;
 	}
 	Tank(int volume) :
 		VOLUME
@@ -72,12 +74,13 @@ public:
 			consumption < MIN_ENGINE_CONSUMPTION ? MIN_ENGINE_CONSUMPTION :
 			consumption > MAX_ENGINE_CONSUMPTION ? MAX_ENGINE_CONSUMPTION :
 			consumption
-		)
-	{
-		consumption_per_second = CONSUMPTION * 3e-5;
-		is_started = false;
-		cout << "Engine is ready:\t" << this << endl;
-	}
+		),
+		is_started(false)
+		{
+			consumption_per_second = CONSUMPTION * 3e-5;
+			cout << "Engine is ready:\t" << this << endl;
+		}
+	
 	~Engine()
 	{
 		cout << "Engine is over:\t" << this << endl;
@@ -98,6 +101,20 @@ public:
 	{
 		cout << "Consumption per 100km: \t" << CONSUMPTION << "liters.\n";
 		cout << "Consumption per 1 sec: \t" << get_consumption_per_second() << "liters.\n";
+	}
+
+	void work(Tank &tank)
+	{
+		if (is_started && tank.get_fuel_level() > 0)
+		{
+			tank.fill(-get_consumption_per_second());
+			cout << "Fuel left: " << tank.get_fuel_level() << "liters\n";
+			if (tank.get_fuel_level() <= 0)
+			{
+				stop();
+				cout << "Engine stop cause fuel is end\n";
+			}
+		}
 	}
 };
 
@@ -136,9 +153,14 @@ public:
 		driver_inside = true;
 		panel();
 	}
-	void get_out()
+	void get_out() 
 	{
 		driver_inside = false;
+	}
+
+	void fill_tank(double amount)
+	{
+		tank.fill(amount);
 	}
 
 	void control()
@@ -160,18 +182,35 @@ public:
 				cout << "How much do u want? "; cin >> amount;
 				tank.fill(amount);
 				break;
+			case 'S':
+			case 's':
+				start_enggine();
+				break;
 			}
 		} while (key != Escape);
 	}
 
-	void panel()const
+	void panel()
 	{
 		while (driver_inside)
 		{
 			system("CLS");
 			cout << "Fuel lvl: \t" << tank.get_fuel_level() << " liters.\n";
 			cout << "Engine is: \t" << (engine.started() ? "started" : "stopped") << endl;
+			cout << "Type Enter to leave from car\n";
+
+			if (engine.started())
+				engine.work(tank);
+
+			if (_kbhit())
+			{
+				char key = _getch();
+				if (key == Enter) get_out();
+			}
+			Sleep(130);
 		}
+		system("CLS");
+		cout << "YOu out of car\n";
 	}
 
 	void info()const
@@ -180,6 +219,49 @@ public:
 		tank.info();
 		cout << "Max speed :\t" << MAX_SPEED << " lm/h\n";
 	}
+
+	void idling()
+	{
+		int seconds = 0;
+		while (engine.started())
+		{
+			tank.info();                    
+			cout << "Seconds running: " << seconds++ << endl;
+			cout << "Press 'S' to stop motor\n\n";
+
+			engine.work(tank);
+
+			if (!engine.started()) break;
+
+			Sleep(1000);
+
+			if (_kbhit())
+			{
+				char key = _getch();
+				if (key == 'S' || key == 's')
+				{
+					engine.stop();
+					cout << "\nEngine manually stopped.\n";
+					break;
+				}
+			}
+
+			cout << endl;
+		}
+		cout << "\n*** Engine stopped after " << seconds << " seconds. ***\n";
+	}
+
+	void start_enggine()
+	{
+		if (tank.get_fuel_level() > 0)
+		{
+			engine.start();
+			idling();
+		}
+		else
+			cout << "No fuel to zapystitb dvigatelb";
+	}
+
 };
 
 //#define TANK_CHECK
@@ -206,9 +288,19 @@ void main()
 	engine.info();
 #endif // ENGINE_CHECK
 
-	Car bmw(10, 80, 270);
+	/*Car bmw(10, 80, 270);
 	bmw.info();
-	bmw.control();
+	bmw.control();*/
+
+	Car nissan(10, 80, 250);
+	nissan.info();
+
+	std::cout << "\nЗаправляем топливо\n";
+	nissan.fill_tank(0.001);
+
+	cout << "\nStart motor\n";
+	nissan.start_enggine();
+	cout << "END";
 
 
 }
