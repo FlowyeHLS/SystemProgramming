@@ -89,10 +89,10 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 				SendMessage(hEditPrefix, WM_GETTEXT, 3, (LPARAM)szIPprefix);
 				dwIPprefix = atoi(szIPprefix);
-				if (dwIPprefix > 32)
+				if (dwIPprefix > 31)
 				{
-					dwIPprefix = 32;
-					strcpy(szIPprefix, "32");
+					dwIPprefix = 31;
+					strcpy(szIPprefix, "31");
 					SendMessage(hEditPrefix, WM_SETTEXT, 0, (LPARAM)szIPprefix);
 				}
 				dwIPmask <<= (32 - dwIPprefix);
